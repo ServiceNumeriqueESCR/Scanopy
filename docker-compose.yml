@@ -3,7 +3,7 @@ services:
     image: scanopy/scanopy:latest
     container_name: scanopy
     restart: unless-stopped
-    network_mode: host 
+    network_mode: host
     volumes:
       - scanopy_data:/app/data
 
