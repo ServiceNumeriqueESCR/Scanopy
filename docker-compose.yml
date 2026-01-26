@@ -4,8 +4,3 @@ services:
     container_name: scanopy
     restart: unless-stopped
     network_mode: host
-    volumes:
-      - scanopy_data:/app/data
-
-volumes:
-  scanopy_data:
