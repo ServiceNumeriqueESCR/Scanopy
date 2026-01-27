@@ -35,7 +35,7 @@ services:
     environment:
       POSTGRES_DB: scanopy
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password_robuste
+      POSTGRES_PASSWORD: password
     volumes:
       - scanopy_postgres_data:/var/lib/postgresql/data
     healthcheck:
