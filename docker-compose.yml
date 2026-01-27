@@ -45,9 +45,23 @@ services:
   server:
     image: ghcr.io/scanopy/scanopy/server:latest
     container_name: scanopy-server
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - "60072:60072"
     environment:
       SCANOPY_LOG_LEVEL: info
       SCANOPY_DATABASE_URL: postgresql://postgres:password_robuste@postgres:5432/scanopy
-      SCANOPY_WEB_EXTERNAL_PATH:
+      SCANOPY_WEB_EXTERNAL_PATH: /
+    restart: unless-stopped
+    networks:
+      - scanopy_net
+
+networks:
+  scanopy_net:
+    driver: bridge
+
+volumes:
+  scanopy_daemon_config:
+  scanopy_postgres_data:
