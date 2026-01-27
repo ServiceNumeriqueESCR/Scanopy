@@ -1,5 +1,4 @@
-version: '3.8'
-
+version: '3'
 services:
   daemon:
     image: ghcr.io/scanopy/scanopy/daemon:latest
@@ -15,11 +14,6 @@ services:
       SCANOPY_NAME: scanopy-daemon
       SCANOPY_HEARTBEAT_INTERVAL: 30
       SCANOPY_MODE: Push
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:60073/api/health || exit 1"]
-      interval: 5s
-      timeout: 3s
-      retries: 15
     volumes:
       - scanopy_daemon_config:/root/.config/daemon
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -33,11 +27,6 @@ services:
       POSTGRES_PASSWORD: password_robuste
     volumes:
       - scanopy_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     restart: unless-stopped
     networks:
       - scanopy_net
@@ -45,9 +34,6 @@ services:
   server:
     image: ghcr.io/scanopy/scanopy/server:latest
     container_name: scanopy-server
-    depends_on:
-      postgres:
-        condition: service_healthy
     ports:
       - "60072:60072"
     environment:
