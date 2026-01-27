@@ -1,10 +1,4 @@
-name: scanopy
-
-x-scanopy-env: &scanopy-env
-  SCANOPY_LOG_LEVEL: info
-  SCANOPY_SERVER_PORT: 60072
-  SCANOPY_DAEMON_PORT: 60073
-
+version: '3.8'
 services:
   daemon:
     image: ghcr.io/scanopy/scanopy/daemon:latest
@@ -13,18 +7,13 @@ services:
     privileged: true
     restart: unless-stopped
     environment:
-      <<: *scanopy-env
-      SCANOPY_SERVER_URL: http://127.0.0.1:60072
-      SCANOPY_PORT: 60073
-      SCANOPY_BIND_ADDRESS: 0.0.0.0
-      SCANOPY_NAME: scanopy-daemon
-      SCANOPY_HEARTBEAT_INTERVAL: 30
-      SCANOPY_MODE: Push
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:60073/api/health || exit 1"]
-      interval: 5s
-      timeout: 3s
-      retries: 15
+      - SCANOPY_LOG_LEVEL=info
+      - SCANOPY_SERVER_URL=http://127.0.0.1:60072
+      - SCANOPY_PORT=60073
+      - SCANOPY_BIND_ADDRESS=0.0.0.0
+      - SCANOPY_NAME=scanopy-daemon
+      - SCANOPY_HEARTBEAT_INTERVAL=30
+      - SCANOPY_MODE=Push
     volumes:
       - scanopy_daemon_config:/root/.config/daemon
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -33,19 +22,14 @@ services:
     image: postgres:17-alpine
     container_name: scanopy-db
     environment:
-      POSTGRES_DB: scanopy
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password_robuste
+      - POSTGRES_DB=scanopy
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password_robuste
     volumes:
       - scanopy_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     restart: unless-stopped
     networks:
-      - scanopy
+      - scanopy_net
 
   server:
     image: ghcr.io/scanopy/scanopy/server:latest
@@ -53,32 +37,17 @@ services:
     ports:
       - "60072:60072"
     environment:
-      <<: *scanopy-env
-      SCANOPY_DATABASE_URL: postgresql://postgres:password_robuste@postgres:5432/scanopy
-      SCANOPY_WEB_EXTERNAL_PATH: /app/static
-      SCANOPY_PUBLIC_URL: http://localhost:60072
-      SCANOPY_INTEGRATED_DAEMON_URL: http://172.40.0.1:60073
-    volumes:
-      - scanopy_server_data:/data
-    depends_on:
-      postgres:
-        condition: service_healthy
-      daemon:
-        condition: service_healthy
+      - SCANOPY_LOG_LEVEL=info
+      - SCANOPY_DATABASE_URL=postgresql://postgres:password_robuste@postgres:5432/scanopy
+      - SCANOPY_WEB_EXTERNAL_PATH=/
     restart: unless-stopped
     networks:
-      - scanopy
+      - scanopy_net
 
 networks:
-  scanopy:
+  scanopy_net:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.40.0.0/16
-          gateway: 172.40.0.1
 
-# C'est ici que Docker crée les volumes automatiquement
 volumes:
   scanopy_daemon_config:
   scanopy_postgres_data:
-  scanopy_server_data:
