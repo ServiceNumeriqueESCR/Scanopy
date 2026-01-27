@@ -1,10 +1,5 @@
 name: scanopy
 
-x-scanopy-env: &scanopy-env
-  SCANOPY_LOG_LEVEL: info
-  SCANOPY_SERVER_PORT: 60072
-  SCANOPY_DAEMON_PORT: 60073
-
 services:
   daemon:
     image: ghcr.io/scanopy/scanopy/daemon:latest
@@ -13,7 +8,7 @@ services:
     privileged: true
     restart: unless-stopped
     environment:
-      <<: *scanopy-env
+      SCANOPY_LOG_LEVEL: info
       SCANOPY_SERVER_URL: http://127.0.0.1:60072
       SCANOPY_PORT: 60073
       SCANOPY_BIND_ADDRESS: 0.0.0.0
@@ -26,7 +21,7 @@ services:
       timeout: 3s
       retries: 15
     volumes:
-      - /opt/docker-compose/scanopy/daemon-config:/root/.config/daemon
+      - scanopy_daemon_config:/root/.config/daemon
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
   postgres:
@@ -35,9 +30,9 @@ services:
     environment:
       POSTGRES_DB: scanopy
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password_robuste # Change-le ici
+      POSTGRES_PASSWORD: password_robuste
     volumes:
-      - /opt/docker-compose/scanopy/postgres_data:/var/lib/postgresql/data
+      - scanopy_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -45,7 +40,7 @@ services:
       retries: 5
     restart: unless-stopped
     networks:
-      - scanopy
+      - scanopy_net
 
   server:
     image: ghcr.io/scanopy/scanopy/server:latest
@@ -53,27 +48,6 @@ services:
     ports:
       - "60072:60072"
     environment:
-      <<: *scanopy-env
-      # Attention : le mot de passe doit être le même que ci-dessus
+      SCANOPY_LOG_LEVEL: info
       SCANOPY_DATABASE_URL: postgresql://postgres:password_robuste@postgres:5432/scanopy
-      SCANOPY_WEB_EXTERNAL_PATH: /app/static
-      SCANOPY_PUBLIC_URL: http://localhost:60072
-      SCANOPY_INTEGRATED_DAEMON_URL: http://172.40.0.1:60073
-    volumes:
-      - /opt/docker-compose/scanopy/server_data:/data
-    depends_on:
-      postgres:
-        condition: service_healthy
-      daemon:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - scanopy
-
-networks:
-  scanopy:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.40.0.0/16
-          gateway: 172.40.0.1
+      SCANOPY_WEB_EXTERNAL_PATH:
