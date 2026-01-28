@@ -1,6 +1,7 @@
-name: scanopy
+version: '3.8'
 
 services:
+  # --- BASE DE DONNÉES ---
   postgres:
     image: postgres:17-alpine
     container_name: scanopy-db
@@ -17,6 +18,7 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # --- SERVEUR (INTERFACE WEB) ---
   server:
     image: ghcr.io/scanopy/scanopy/server:latest
     container_name: scanopy-server
@@ -25,20 +27,19 @@ services:
     environment:
       SCANOPY_DATABASE_URL: postgresql://postgres:password_robuste@postgres:5432/scanopy
       SCANOPY_PUBLIC_URL: http://192.168.2.165:60072
-      # Le serveur cherche le daemon sur l'IP de l'hôte
       SCANOPY_INTEGRATED_DAEMON_URL: http://192.168.2.165:60073
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
 
+  # --- DAEMON (SCANNER RÉSEAU) ---
   daemon:
     image: ghcr.io/scanopy/scanopy/daemon:latest
     container_name: scanopy-daemon
     network_mode: host
     privileged: true
     environment:
-      # Le daemon envoie ses données à l'IP de l'hôte
       SCANOPY_SERVER_URL: http://192.168.2.165:60072
       SCANOPY_PORT: 60073
       SCANOPY_BIND_ADDRESS: 0.0.0.0
